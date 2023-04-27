@@ -7,9 +7,19 @@
 
 import Foundation
 
+protocol PokemonManagerDelegate {
+    func didUpdatePokemon(pokemon: [PokemonModel])
+    func didFailWithError(error :  Error)
+}
+
 struct PokemonManager{
     
     let pokemonURL: String = "https://pokeapi.co/api/v2/pokemon?limit=905&offset=0"
+    var delegate: PokemonManagerDelegate?
+    
+    func fetchPokemon(){
+        performRequest(with: pokemonURL)
+    }
     
 //    Pasos consumir API
     //    1. Create/get URL
@@ -17,32 +27,42 @@ struct PokemonManager{
     //    3. Give the session a task
     //    4. start the task
     
-    func performRequest(with urlString: String){
+    private func performRequest(with urlString: String){
         if let url = URL(string: urlString) {
             let session = URLSession(configuration: .default)
             let task = session.dataTask(with: url){ data, response, error in
                 if error != nil {
-                    print(error!)
+                    self.delegate?.didFailWithError(error: error!)
                 }
                 if let safeData =  data {
                     if let pokemon = self.parseJSON(pokemonData: safeData){
-                        print(pokemon)
-                    }
+                        self.delegate?.didUpdatePokemon(pokemon: pokemon)                    }
                 }
             }
             task.resume()
         }
     }
-    func parseJSON(pokemonData: Data) -> [PokemonModel]? {
+    
+    private func parseJSON(pokemonData: Data) -> [PokemonModel]? {
         let decoder = JSONDecoder()
         do{
             let decodeData = try decoder.decode(PokemonData.self, from: pokemonData)
-            let pokemon = decodeData.results?.map{
+            let pokemon = decodeData.results?.map {
                 PokemonModel(name: $0.name ?? "", imageURL: $0.url ?? "")
             }
             return pokemon
         } catch{
             return nil
         }
+    }
+}
+
+extension ViewController: PokemonManagerDelegate{
+    func didUpdatePokemon(pokemon: [PokemonModel]) {
+        print(pokemon)
+    }
+    
+    func didFailWithError(error: Error) {
+        print(error)
     }
 }

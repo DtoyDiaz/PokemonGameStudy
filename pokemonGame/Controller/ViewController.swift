@@ -15,12 +15,15 @@ class ViewController: UIViewController {
     @IBOutlet var answerButtons: [UIButton]!
     @IBOutlet weak var titleLabel: UILabel!
     
+    lazy var pokemonManager = PokemonManager()
+    
     override func viewDidLoad() {
         super.viewDidLoad()
         titleLabel.text = "¿Quién es este Pokémon?"
         scoreLabel.text = "Puntaje: 0"
         messageLabel.isHidden = true
         createButtons()
+        pokemonManager.fetchPokemon()
     }
     
     @IBAction func buttonPressed(_ sender: UIButton) {
