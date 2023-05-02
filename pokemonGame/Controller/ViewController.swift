@@ -24,8 +24,8 @@ class ViewController: UIViewController {
             setButtonTitles()
         }
     }
-    var correctAnswer: String  = ""
-    var correctAnswerImage: String = ""
+    var correctAnswer: String  = " "
+    var correctAnswerImage: String = " "
     
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -39,10 +39,12 @@ class ViewController: UIViewController {
     }
     
     @IBAction func buttonPressed(_ sender: UIButton) {
-        if let buttonContent = sender.title(for: .normal) {
-            print(sender.titleLabel?.text)
-        } else {
-            print("Button title not set")
+        let userAnswer = sender.title(for: .normal)!
+        if game.checkAnswer(userAnswer, correctAnswer){
+            messageLabel.text = "Sí, es un \(userAnswer)"
+            scoreLabel.text = "Puntaje: \(game.score)"
+            sender.layer.borderColor = UIColor.systemGreen.cgColor
+            sender.layer.borderWidth = 2
         }
     }
     
@@ -64,7 +66,6 @@ class ViewController: UIViewController {
             }
         }
     }
-    
 }
 
 extension ViewController: PokemonManagerDelegate{
@@ -85,7 +86,11 @@ extension ViewController: PokemonManagerDelegate{
 
 extension ViewController: ImageManagerDelegate {
     func didUpdateImage(image: ImageModel) {
-        print(image.imageURL)
+        correctAnswerImage = image.imageURL
+        
+        DispatchQueue.main.async {
+            let url = URL(string: image.imageURL)
+        }
     }
     
     func didFailWithErrorImage(error: Error) {
@@ -104,5 +109,3 @@ extension Collection{
         Array(shuffled().prefix(n))
     }
 }
-
-
