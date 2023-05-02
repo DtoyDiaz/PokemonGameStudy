@@ -57,12 +57,4 @@ struct PokemonManager{
     }
 }
 
-extension ViewController: PokemonManagerDelegate{
-    func didUpdatePokemon(pokemon: [PokemonModel]) {
-        print(pokemon)
-    }
-    
-    func didFailWithError(error: Error) {
-        print(error)
-    }
-}
+

@@ -16,12 +16,24 @@ class ViewController: UIViewController {
     @IBOutlet weak var titleLabel: UILabel!
     
     lazy var pokemonManager = PokemonManager()
+    lazy var imageManager = ImageManager()
+    lazy var game = GameModel()
+    
+    var randomFourPokemon: [PokemonModel] = []{
+        didSet {
+            setButtonTitles()
+        }
+    }
+    var correctAnswer: String  = ""
+    var correctAnswerImage: String = ""
     
     override func viewDidLoad() {
         super.viewDidLoad()
         titleLabel.text = "¿Quién es este Pokémon?"
-        scoreLabel.text = "Puntaje: 0"
-        messageLabel.isHidden = true
+        messageLabel.text  = " "
+        pokemonManager.delegate = self
+        imageManager.delegate = self
+        
         createButtons()
         pokemonManager.fetchPokemon()
     }
@@ -45,5 +57,52 @@ class ViewController: UIViewController {
         }
     }
     
+    func setButtonTitles() {
+        for (index, button) in answerButtons.enumerated() {
+            DispatchQueue.main.async { [self] in
+                button.setTitle(randomFourPokemon[safe: index]?.name.capitalized, for: .normal)
+            }
+        }
+    }
+    
 }
+
+extension ViewController: PokemonManagerDelegate{
+    func didUpdatePokemon(pokemon: [PokemonModel]) {
+        randomFourPokemon = pokemon.choose(4)
+        
+        let index = Int.random(in: 0...3)
+        let imageData = randomFourPokemon[index].imageURL
+        correctAnswer = randomFourPokemon[index].name
+        
+        imageManager.fetchImage(url: imageData)
+    }
+    
+    func didFailWithError(error: Error) {
+        print(error)
+    }
+}
+
+extension ViewController: ImageManagerDelegate {
+    func didUpdateImage(image: ImageModel) {
+        print(image.imageURL)
+    }
+    
+    func didFailWithErrorImage(error: Error) {
+        print(error)
+    }
+}
+
+extension Collection where Indices.Iterator.Element == Index {
+    public subscript(safe index: Index) -> Iterator.Element? {
+        return (startIndex <= index && index < endIndex) ? self[index] : nil
+    }
+}
+
+extension Collection{
+    func choose(_ n: Int) -> Array<Element>{
+        Array(shuffled().prefix(n))
+    }
+}
+
 
