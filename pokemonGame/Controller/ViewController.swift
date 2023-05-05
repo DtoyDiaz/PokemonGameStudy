@@ -6,6 +6,7 @@
 //
 
 import UIKit
+import AlamofireImage
 
 class ViewController: UIViewController {
 
@@ -88,14 +89,63 @@ extension ViewController: ImageManagerDelegate {
     func didUpdateImage(image: ImageModel) {
         correctAnswerImage = image.imageURL
         
-        DispatchQueue.main.async {
-            let url = URL(string: image.imageURL)
+        DispatchQueue.global().async { [weak self] in
+            guard let self = self else { return }
+            if let url = URL(string: self.correctAnswerImage),
+               let data = try? Data(contentsOf: url),
+               let image = UIImage(data: data) {
+                let shadowImage = self.applyThresholdFilter(image: image, threshold: 0)
+                DispatchQueue.main.async { [weak self] in
+                    guard let self = self else { return }
+                    self.pokemonShadow.image = shadowImage
+                }
+            }
         }
     }
     
     func didFailWithErrorImage(error: Error) {
         print(error)
     }
+    func applyThresholdFilter(image: UIImage, threshold: CGFloat) -> UIImage? {
+
+        let context = CIContext()
+        let ciImage = CIImage(image: image)
+        let grayFilter = CIFilter(name: "CIPhotoEffectMono")
+        grayFilter?.setValue(ciImage, forKey: kCIInputImageKey)
+        guard let grayImage = grayFilter?.outputImage,
+              let cgImage = context.createCGImage(grayImage, from: grayImage.extent) else {
+                  return nil
+                  
+              }
+
+        // Aplicar la umbralización a la imagen en escala de grises
+
+        let thresholdFilter = CIFilter(name: "CIColorMatrix")
+        thresholdFilter?.setDefaults()
+        thresholdFilter?.setValue(CIVector(x: threshold, y: 0, z: 0, w: 0), forKey: "inputRVector")
+        thresholdFilter?.setValue(CIVector(x: 0, y: threshold, z: 0, w: 0), forKey: "inputGVector")
+        thresholdFilter?.setValue(CIVector(x: 0, y: 0, z: threshold, w: 0), forKey: "inputBVector")
+        thresholdFilter?.setValue(CIVector(x: 0, y: 0, z: 0, w: 1), forKey: "inputAVector")
+        thresholdFilter?.setValue(CIVector(x: 0, y: 0, z: 0, w: 0), forKey: "inputBiasVector")
+        thresholdFilter?.setValue(CIImage(cgImage: cgImage), forKey: kCIInputImageKey)
+
+        guard let outputImage = thresholdFilter?.outputImage else {
+            return nil
+        }
+
+        // Convertir la imagen resultante en una imagen de UIImage
+
+        let finalImage = UIImage(ciImage: outputImage)
+        return finalImage
+
+    }
+
+
+
+
+
+
+
 }
 
 extension Collection where Indices.Iterator.Element == Index {
